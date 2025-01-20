@@ -318,3 +318,4 @@ test/databaseAdapter.js
 /media-with-relation-preview
 /media-without-relation-preview
 /media-without-cache-tags
+.pnpm-store
