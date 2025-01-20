@@ -15,7 +15,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/payloadcms/payload.git",
+    "url": "https://github.com/tomtana/payload-stripe-fix.git",
     "directory": "packages/plugin-stripe"
   },
   "license": "MIT",
@@ -98,7 +98,7 @@
       }
     },
     "main": "./dist/index.js",
-    "registry": "https://registry.npmjs.org/",
+    "registry": "https://npm.pkg.github.com",
     "types": "./dist/index.d.ts"
   },
   "homepage:": "https://payloadcms.com"

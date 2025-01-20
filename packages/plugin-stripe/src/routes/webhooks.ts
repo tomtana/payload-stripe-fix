@@ -41,39 +41,47 @@ export const stripeWebhooks = async (args: {
       }
 
       if (event) {
-        handleWebhooks({
-          config,
-          event,
-          payload: req.payload,
-          pluginConfig,
-          req,
-          stripe,
-        })
-
-        // Fire external webhook handlers if they exist
-        if (typeof webhooks === 'function') {
-          webhooks({
-            config,
-            event,
-            payload: req.payload,
-            pluginConfig,
-            req,
-            stripe,
-          })
-        }
-
-        if (typeof webhooks === 'object') {
-          const webhookEventHandler = webhooks[event.type]
-          if (typeof webhookEventHandler === 'function') {
-            webhookEventHandler({
+        try {
+          // Wait for all webhook handlers to complete
+          await Promise.all([
+            // Main webhook handler
+            handleWebhooks({
               config,
               event,
               payload: req.payload,
               pluginConfig,
               req,
               stripe,
-            })
-          }
+            }),
+            // Function-style webhooks
+            typeof webhooks === 'function'
+              ? webhooks({
+                  config,
+                  event,
+                  payload: req.payload,
+                  pluginConfig,
+                  req,
+                  stripe,
+                })
+              : Promise.resolve(),
+            // Object-style webhooks
+            typeof webhooks === 'object' && webhooks[event.type]
+              ? webhooks[event.type]({
+                  config,
+                  event,
+                  payload: req.payload,
+                  pluginConfig,
+                  req,
+                  stripe,
+                })
+              : Promise.resolve(),
+          ])
+
+          req.payload.logger.info('Successfully processed all webhook handlers')
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Unknown error'
+          req.payload.logger.error(`Error processing webhooks: ${msg}`)
+          returnStatus = 500
         }
       }
     }
