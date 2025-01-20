@@ -44,7 +44,7 @@ export const stripeWebhooks = async (args: {
         try {
           // Wait for all webhook handlers to complete
           await Promise.all([
-            // Main webhook handler
+            // Automatic sync webhook handler
             handleWebhooks({
               config,
               event,
@@ -53,7 +53,7 @@ export const stripeWebhooks = async (args: {
               req,
               stripe,
             }),
-            // Function-style webhooks
+            // Fire external webhook handler if it exists
             typeof webhooks === 'function'
               ? webhooks({
                   config,
@@ -64,7 +64,7 @@ export const stripeWebhooks = async (args: {
                   stripe,
                 })
               : Promise.resolve(),
-            // Object-style webhooks
+            // Fire external webhook handler for specific event types
             typeof webhooks === 'object' && webhooks[event.type]
               ? webhooks[event.type]({
                   config,
@@ -76,11 +76,12 @@ export const stripeWebhooks = async (args: {
                 })
               : Promise.resolve(),
           ])
-
-          req.payload.logger.info('Successfully processed all webhook handlers')
-        } catch (error) {
-          const msg = error instanceof Error ? error.message : 'Unknown error'
-          req.payload.logger.error(`Error processing webhooks: ${msg}`)
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Unknown error'
+          req.payload.logger.error({
+            err,
+            msg: `Error processing stripe webhook event ${event.type}: ${msg}`,
+          })
           returnStatus = 500
         }
       }
